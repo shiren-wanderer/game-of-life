@@ -20,7 +20,8 @@ type alias Model =
 type Msg
     = Update Time
     | Next
-    | Run Bool
+    | OnOff
+    | Reset
     | NewField Int (Matrix Bool)
 
 
@@ -48,25 +49,28 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Next ->
-            { model | field = nextGeneration model, running = False } ! []
+            { model | field = nextGenerationMatrix model, running = False } ! []
 
         Update x ->
-            { model | field = nextGeneration model } ! []
+            { model | field = nextGenerationMatrix model } ! []
 
         NewField size field ->
             Model size field False ! []
 
-        Run b ->
-            { model | running = b } ! []
+        OnOff ->
+            { model | running = not model.running } ! []
+
+        Reset ->
+            init model.size
 
 
-nextGeneration : Model -> Matrix Bool
-nextGeneration model =
-    Matrix.mapWithLocation (\loc -> populateAt model.field loc) model.field
+nextGenerationMatrix : Model -> Matrix Bool
+nextGenerationMatrix model =
+    Matrix.mapWithLocation (\loc -> nextGenerationAt model.field loc) model.field
 
 
-populateAt : Matrix Bool -> Location -> Bool -> Bool
-populateAt oldField loc element =
+nextGenerationAt : Matrix Bool -> Location -> Bool -> Bool
+nextGenerationAt oldField loc element =
     let
         num =
             numOfSurround loc oldField
@@ -117,7 +121,7 @@ surroundLocations ( x, y ) =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     if model.running then
-        Time.every (100 * millisecond) Update
+        Time.every (10 * millisecond) Update
     else
         Sub.none
 
@@ -126,8 +130,8 @@ view : Model -> Html.Html Msg
 view model =
     div []
         [ div []
-            [ button [ onClick Next ] [ text "Next" ]
-            , button [ onClick <| Run (not model.running) ]
+            [ button [ style buttonStyle, onClick Next ] [ text "Next" ]
+            , button [ style buttonStyle, onClick OnOff ]
                 [ text
                     (if model.running then
                         "Stop"
@@ -135,6 +139,7 @@ view model =
                         "Run"
                     )
                 ]
+            , button [ style buttonStyle, onClick Reset ] [ text "Reset" ]
             ]
         , div [] <| List.map printRow <| Matrix.toList model.field
         ]
@@ -155,3 +160,11 @@ printRow list =
                     ]
             )
             list
+
+
+buttonStyle : List ( String, String )
+buttonStyle =
+    [ ( "height", "50px" )
+    , ( "width", "100px" )
+    , ( "font-size", "2em" )
+    ]
