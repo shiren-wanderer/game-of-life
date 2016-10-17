@@ -2,4 +2,10 @@
 
 This is John Conway's Game of Life in Elm.
 
-[Here is Live Demo](https://gom-dev.github.io/game-of-life/)
+
+```
+elm-package install
+elm-reactor
+```
+
+Open your browser and go to http://localhost:8000
