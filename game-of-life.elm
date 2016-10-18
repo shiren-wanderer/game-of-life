@@ -9,6 +9,8 @@ import Matrix.Random exposing (..)
 import Time exposing (Time, millisecond)
 import Random exposing (..)
 import String
+import Svg exposing (..)
+import Svg.Attributes exposing (..)
 
 
 type alias Model =
@@ -100,7 +102,9 @@ nextGenerationAt oldField loc element =
         num =
             numOfSurround loc oldField
     in
-        if num > 3 || num < 2 then
+        if num == 0 then
+            False
+        else if num > 3 || num < 2 then
             False
         else if (num == 2 || num == 3) && element then
             True
@@ -155,22 +159,27 @@ view : Model -> Html.Html Msg
 view model =
     div []
         [ div []
-            [ button [ style buttonStyle, onClick Next ] [ text "Next" ]
-            , button [ style buttonStyle, onClick OnOff ] [ text <| onOffButtonText model.running ]
-            , button [ style buttonStyle, onClick Reset ] [ text "Reset" ]
+            [ button [ Attr.style buttonStyle, onClick Next ] [ Html.text "Next" ]
+            , button [ Attr.style buttonStyle, onClick OnOff ] [ Html.text <| onOffButtonText model.running ]
+            , button [ Attr.style buttonStyle, onClick Reset ] [ Html.text "Reset" ]
             , input
-                [ type' "range"
+                [ Attr.type' "range"
                 , Attr.min "100"
                 , Attr.max "1000"
                 , Attr.step "100"
-                , value <| toString model.speed
+                , Attr.value <| toString model.speed
                 , onInput UpdateSpeed
                 ]
                 []
-            , span [] [ text <| (toString <| model.speed / 1000) ++ "sec" ]
+            , span [] [ Html.text <| (toString <| model.speed / 1000) ++ "sec" ]
             ]
-        , div [] <| List.map printRow <| Matrix.toList model.field
+        , div [] [ svg [ viewBox svgViewBox, width "500px" ] <| Matrix.flatten <| Matrix.mapWithLocation svgCell model.field ]
         ]
+
+
+svgViewBox : String
+svgViewBox =
+    "0 0 " ++ (toString initSize) ++ " " ++ (toString initSize)
 
 
 onOffButtonText : Bool -> String
@@ -181,21 +190,21 @@ onOffButtonText running =
         "Run"
 
 
-printRow : List Bool -> Html.Html Msg
-printRow list =
-    div [ style [ ( "height", "18px" ) ] ] <|
-        List.map
-            (\b ->
-                span []
-                    [ text <|
-                        (if b then
-                            "⬛"
-                         else
-                            "⬜"
-                        )
-                    ]
+svgCell : Location -> Bool -> Svg msg
+svgCell loc val =
+    Svg.rect
+        [ x (row loc |> toString)
+        , y (col loc |> toString)
+        , width "1"
+        , height "1"
+        , fill
+            (if val then
+                "#000000"
+             else
+                "#FFFFFF"
             )
-            list
+        ]
+        []
 
 
 buttonStyle : List ( String, String )
